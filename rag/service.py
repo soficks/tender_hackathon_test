@@ -1,9 +1,12 @@
+import os
 import json
 from pathlib import Path
-
 import chromadb
 from sentence_transformers import SentenceTransformer
 
+# Отключаем сетевые проверки Hugging Face, чтобы убрать таймауты
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -16,8 +19,10 @@ MODEL_NAME = "BAAI/bge-m3"
 
 class RagService:
     def __init__(self):
+        # Модель инициализируется быстро только для поиска по 1 вопросу
         self.embedder = SentenceTransformer(MODEL_NAME)
 
+        # Подключаемся к уже готовой базе
         self.client = chromadb.PersistentClient(
             path=str(CHROMA_PATH)
         )
@@ -25,57 +30,6 @@ class RagService:
         self.collection = self.client.get_or_create_collection(
             name=COLLECTION_NAME,
             metadata={"hnsw:space": "cosine"}
-        )
-
-        self._load_knowledge_base()
-
-    def _load_knowledge_base(self):
-        if not KNOWLEDGE_BASE_PATH.exists():
-            raise FileNotFoundError(
-                f"Knowledge base not found: {KNOWLEDGE_BASE_PATH}"
-            )
-
-        if self.collection.count() > 0:
-            return
-
-        documents = []
-        metadatas = []
-        ids = []
-
-        with KNOWLEDGE_BASE_PATH.open(
-            "r",
-            encoding="utf-8"
-        ) as file:
-
-            for line in file:
-                item = json.loads(line)
-
-                documents.append(item["text"])
-
-                metadatas.append({
-                    "source_doc": item["source_doc"],
-                    "page": item["page"],
-                    "section_title": item["section_title"]
-                })
-
-                ids.append(item["chunk_id"])
-
-        if not documents:
-            raise ValueError(
-                "Knowledge base is empty"
-            )
-
-        embeddings = self.embedder.encode(
-            documents,
-            normalize_embeddings=True,
-            show_progress_bar=True
-        ).tolist()
-
-        self.collection.add(
-            documents=documents,
-            embeddings=embeddings,
-            metadatas=metadatas,
-            ids=ids
         )
 
     def search(
@@ -93,20 +47,9 @@ class RagService:
             n_results=top_k
         )
 
-        documents = results.get(
-            "documents",
-            [[]]
-        )[0]
-
-        metadatas = results.get(
-            "metadatas",
-            [[]]
-        )[0]
-
-        distances = results.get(
-            "distances",
-            [[]]
-        )[0]
+        documents = results.get("documents", [[]])[0]
+        metadatas = results.get("metadatas", [[]])[0]
+        distances = results.get("distances", [[]])[0]
 
         return [
             {
@@ -115,11 +58,7 @@ class RagService:
                 "distance": distance
             }
             for document, metadata, distance
-            in zip(
-                documents,
-                metadatas,
-                distances
-            )
+            in zip(documents, metadatas, distances)
         ]
 
 
