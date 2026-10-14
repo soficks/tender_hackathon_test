@@ -1,0 +1,79 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #f5eaf2;
+  background: #141018;
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button,
+input {
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #f5a3c7;
+  outline-offset: 3px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#root {
+  min-height: 100vh;
+  padding: 24px;
+  background:
+    radial-gradient(
+      ellipse at top left,
+      #47243d80,
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at bottom right,
+      #35213d80,
+      transparent 55%
+    ),
+    #141018;
+}
+
+@media (max-width: 600px) {
+  #root {
+    padding: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  input {
+    transition: none;
+  }
+}
+#root {
+  background: #141018 url('/sakura-bg.png') center / cover no-repeat;
+}
